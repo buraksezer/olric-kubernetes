@@ -1,0 +1,107 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: olricd-config
+data:
+        olricd.yaml: |
+                olricd:
+                  bindPort: 3320
+                  serializer: "msgpack"
+                  keepAlivePeriod: "300s"
+                  requestTimeout: "5s"
+                  partitionCount:  271
+                  replicaCount: 1
+                  writeQuorum: 1
+                  readQuorum: 1
+                  readRepair: false
+                  backupMode: 0
+                  tableSize: 1048576 # 1MB in bytes
+                  memberCountQuorum: 1
+
+                logging:
+                  verbosity: 6
+                  level: "DEBUG"
+                  output: "stderr"
+
+                memberlist:
+                  environment: "lan"
+                  bindPort: 3322
+                  enableCompression: false
+                  joinRetryInterval: "1s"
+                  maxJoinAttempts: 100
+
+                serviceDiscovery:
+                  provider: "k8s"
+                  path: "/usr/lib/olric-cloud-plugin.so"
+                  args: 'label_selector="app = olricd"'
+
+---
+
+apiVersion: apps/v1 # for versions before 1.9.0 use apps/v1beta2
+kind: Deployment
+metadata:
+  name: olricd
+spec:
+  selector:
+    matchLabels:
+      app: olricd
+  replicas: 21 # tells deployment to run 2 pods matching the template
+  template:
+    metadata:
+      labels:
+        app: olricd
+    spec:
+      containers:
+      - name: olricd
+        image: olricio/olric-cloud-plugin:latest
+        ports:
+        - containerPort: 3320
+        - containerPort: 3322
+        volumeMounts:
+        - name: olricd-config-volume
+          mountPath: /etc/olricd
+        env:
+          - name: OLRICD_CONFIG
+            value: "/etc/olricd/olricd.yaml"
+      volumes:
+      - name: olricd-config-volume
+        configMap:
+          name: olricd-config
+          items:
+          - key: olricd.yaml
+            path: olricd.yaml
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    run: olricd
+  name: olricd
+spec:
+  clusterIP: None
+  ports:
+  - port: 3322
+    protocol: TCP
+    targetPort: 3322
+  selector:
+    run: olricd
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    run: olricd-client
+  name: olricd-client
+spec:
+  clusterIP: None
+  ports:
+  - port: 3320
+    protocol: TCP
+    targetPort: 3320
+  selector:
+    run: olricd
+
