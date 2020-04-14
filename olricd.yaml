@@ -33,23 +33,25 @@ data:
                 serviceDiscovery:
                   provider: "k8s"
                   path: "/usr/lib/olric-cloud-plugin.so"
-                  args: 'label_selector="app = olricd"'
+                  args: 'label_selector="run = olricd"'
 
 ---
 
 apiVersion: apps/v1 # for versions before 1.9.0 use apps/v1beta2
 kind: Deployment
 metadata:
+  labels: 
+    service: olricd
   name: olricd
 spec:
   selector:
     matchLabels:
-      app: olricd
-  replicas: 21 # tells deployment to run 2 pods matching the template
+      run: olricd
+  replicas: 3 # tells deployment to run 2 pods matching the template
   template:
     metadata:
       labels:
-        app: olricd
+        run: olricd
     spec:
       containers:
       - name: olricd
@@ -76,32 +78,27 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  labels:
-    run: olricd
-  name: olricd
+  name: memberlist
 spec:
+  selector:
+    run: olricd
   clusterIP: None
   ports:
   - port: 3322
     protocol: TCP
     targetPort: 3322
-  selector:
-    run: olricd
 
 ---
 
 apiVersion: v1
 kind: Service
 metadata:
-  labels:
-    run: olricd-client
-  name: olricd-client
+  name: olricd
 spec:
-  clusterIP: None
+  selector:
+    run: olricd
   ports:
   - port: 3320
     protocol: TCP
     targetPort: 3320
-  selector:
-    run: olricd
 
