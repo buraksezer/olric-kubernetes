@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: olric-debug
+  labels:
+    purpose: olric-debug-cluster
+spec:
+  containers:
+  - name: olric-debug
+    image: olricio/olric-debug:latest
+    command: ["/bin/sh"]
+    args: ["-c", "while true; do sleep 10;done"]
+  restartPolicy: OnFailure
