@@ -148,7 +148,7 @@ olricd               ClusterIP      10.110.245.55   <none>        3320/TCP      
 olricd-external-lb   LoadBalancer   10.98.198.52    <pending>     3320:31429/TCP,3322:32681/TCP   7h36m
 ```
 
-In order to get the exterbal IP, you need to run the following command:
+In order to get the external IP, you need to run the following command:
 
 ```bash
 $ minikube tunnel
@@ -175,6 +175,8 @@ $ olric-load -a $EXTERNAL-IP:3320 -c get -k 1000000 -s msgpack
 ```
 
 See [Tooling](https://github.com/buraksezer/olric#tooling) document to learn about how you install Olric tools on your system.
+
+[Kubernetes documentation on how you expose external IP address](https://kubernetes.io/docs/tutorials/stateless-application/expose-external-ip-address/)
 
 ### Delete your deployment
 
