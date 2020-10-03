@@ -1,3 +1,29 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: olricd
+rules:
+- apiGroups: [""]
+  resources: ["pods"]
+  verbs: ["get", "watch", "list"]
+
+---
+
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: olricd
+subjects:
+- kind: ServiceAccount
+  name: default
+  namespace: default
+roleRef:
+  kind: ClusterRole
+  name: olricd
+  apiGroup: rbac.authorization.k8s.io
+
+---
+
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -14,7 +40,7 @@ data:
                   writeQuorum: 1
                   readQuorum: 1
                   readRepair: false
-                  backupMode: 0
+                  replicationMode: 0
                   tableSize: 1048576 # 1MB in bytes
                   memberCountQuorum: 1
 
@@ -55,7 +81,8 @@ spec:
     spec:
       containers:
       - name: olricd
-        image: olricio/olric-cloud-plugin:latest
+        image: olricio/olric-cloud-plugin:v0.3.0-beta.4
+        imagePullPolicy: Always
         ports:
         - containerPort: 3320
         - containerPort: 3322
