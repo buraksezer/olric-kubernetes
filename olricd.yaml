@@ -81,7 +81,7 @@ spec:
     spec:
       containers:
       - name: olricd
-        image: olricio/olric-cloud-plugin:v0.3.0-beta.4
+        image: olricio/olric-cloud-plugin:v0.3.0-beta.6
         imagePullPolicy: Always
         ports:
         - containerPort: 3320
