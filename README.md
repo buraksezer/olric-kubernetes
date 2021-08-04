@@ -206,7 +206,7 @@ Now, you need to create a horizontal pod autoscaler:
 $ kubectl autoscale deployment olricd-hpa --cpu-percent=50 --min=1 --max=10
 ```
 
-In order to access the cluster, you can use `olric-debug` deployment. See [Accessing the cluster](#Accessing the cluster) section. 
+In order to access the cluster, you can use `olric-debug` deployment. See [Accessing the cluster](#accessing-the-cluster) section. 
 
 To increase load:
 
