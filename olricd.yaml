@@ -101,6 +101,11 @@ spec:
         ports:
         - containerPort: 3320
         - containerPort: 3322
+        resources:
+          limits:
+            cpu: 500m
+          requests:
+            cpu: 200m
         volumeMounts:
         - name: olricd-config-volume
           mountPath: /etc/olricd

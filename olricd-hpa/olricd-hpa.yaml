@@ -1,0 +1,151 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: olricd-hpa
+rules:
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "watch", "list"]
+
+---
+
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: olricd-hpa
+subjects:
+  - kind: ServiceAccount
+    name: default
+    namespace: default
+roleRef:
+  kind: ClusterRole
+  name: olricd-hpa
+  apiGroup: rbac.authorization.k8s.io
+
+---
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: olricd-config
+data:
+  olricd.yaml: |
+    olricd:
+      bindAddr: 0.0.0.0
+      bindPort: 3320
+      serializer: msgpack
+      keepAlivePeriod: 300s
+      bootstrapTimeout: 5s
+      partitionCount:  13
+      replicaCount: 1
+      writeQuorum: 1
+      readQuorum: 1
+      readRepair: false
+      replicationMode: 0 # sync mode. for async, set 1
+      memberCountQuorum: 1
+      routingTablePushInterval: 1m
+
+    storageEngines:
+      config:
+        kvstore:
+          tableSize: 1048576
+
+    client:
+      dialTimeout: -1s
+      readTimeout: 3s
+      writeTimeout: 3s
+      keepAlive: 15s
+      minConn: 1
+      maxConn: 100
+      poolTimeout: 3s
+
+    logging:
+      verbosity: 6
+      level: DEBUG
+      output: stderr
+
+    memberlist:
+      environment: "lan"
+      bindPort: 3322
+      enableCompression: false
+      joinRetryInterval: "1s"
+      maxJoinAttempts: 100
+
+    serviceDiscovery:
+      provider: "k8s"
+      path: "/usr/lib/olric-cloud-plugin.so"
+      args: 'label_selector="run = olricd-hpa"'
+
+---
+
+apiVersion: apps/v1 # for versions before 1.9.0 use apps/v1beta2
+kind: Deployment
+metadata:
+  labels:
+    service: olricd-hpa
+  name: olricd-hpa
+spec:
+  selector:
+    matchLabels:
+      run: olricd-hpa
+  replicas: 3 # tells deployment to run 2 pods matching the template
+  template:
+    metadata:
+      labels:
+        run: olricd-hpa
+    spec:
+      containers:
+        - name: olricd-hpa
+          image: olricio/olric-cloud-plugin:v0.4.0-rc.1
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 3320
+            - containerPort: 3322
+          resources:
+            limits:
+              cpu: 500m
+            requests:
+              cpu: 200m
+          volumeMounts:
+            - name: olricd-config-volume
+              mountPath: /etc/olricd
+          env:
+            - name: OLRICD_CONFIG
+              value: "/etc/olricd/olricd.yaml"
+      volumes:
+        - name: olricd-config-volume
+          configMap:
+            name: olricd-config
+            items:
+              - key: olricd.yaml
+                path: olricd.yaml
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: memberlist
+spec:
+  selector:
+    run: olricd-hpa
+  clusterIP: None
+  ports:
+    - port: 3322
+      protocol: TCP
+      targetPort: 3322
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: olricd-hpa
+spec:
+  selector:
+    run: olricd-hpa
+  ports:
+    - port: 3320
+      protocol: TCP
+      targetPort: 3320
+
