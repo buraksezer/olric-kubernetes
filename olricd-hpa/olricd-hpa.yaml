@@ -96,7 +96,7 @@ spec:
     spec:
       containers:
         - name: olricd-hpa
-          image: olricio/olric-cloud-plugin:v0.4.0-rc.1
+          image: olricio/olric-cloud-plugin:v0.4.0
           imagePullPolicy: Always
           ports:
             - containerPort: 3320
